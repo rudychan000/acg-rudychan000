@@ -3,9 +3,15 @@
 #include <cassert>
 #include <vector>
 #include <filesystem>
+#define _USE_MATH_DEFINES
+#include <cmath>
 //
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846264338327950288
+#endif 
 
 /**
  * @brief compute the area of a triangle
@@ -65,7 +71,16 @@ void draw_polygon(
         float p1x = polygon_xy[i1_vtx * 2 + 0] - x;
         float p1y = polygon_xy[i1_vtx * 2 + 1] - y;
         // write a few lines of code to compute winding number (hint: use atan2)
+
+        float plen = sqrt(pow(p0x, 2) + pow(p0y, 2));
+        float qlen = sqrt(pow(p1x, 2) + pow(p1y, 2));
+
+        float cos_num = (p0x * p1x + p0y * p1y) / (plen * qlen);
+        float sin_num=(p0y*p1x-p0x*p1y)/ (plen * qlen);
+        float angle= atan2(sin_num, cos_num);
+        winding_number += angle / (2 * M_PI);
       }
+
       const int int_winding_number = int(std::round(winding_number));
       if (int_winding_number == 1 ) { // if (x,y) is inside the polygon
         img_data[ih*width + iw] = brightness;
@@ -85,12 +100,64 @@ void draw_polygon(
 void dda_line(
     float x0, float y0,
     float x1, float y1,
-    std::vector<unsigned char> &img_data,
+    std::vector<unsigned char>& img_data,
     unsigned int width,
-    unsigned char brightness ) {
-  auto dx = x1 - x0;
-  auto dy = y1 - y0;
-  // write some code below to paint pixel on the line with color `brightness`
+    unsigned char brightness) {
+    auto dx = x1 - x0;
+    auto dy = y1 - y0;
+    auto m = dy / dx;
+    // write some code below to paint pixel on the line with color `brightness`
+
+    if (dx == 0 && dy < 0)m = -m; // the negative y axis
+
+    if (m >= 0 && m <= 1) {
+        if (dx >= 0) {
+            for (int i = 0; i < dx + 1; i++) {
+                img_data[floor(x0 + i) + floor(y0 - i * m) * width] = brightness;
+            }
+        }
+        else {
+            for (int i = 0; i < floor(1 - dx); i++) {
+                img_data[floor(x0 - i) + floor(y0 + i * m) * width] = brightness;
+            }
+        }
+    }
+    else if (m > 1) {
+        if (dy >= 0) {
+            for (int i = 0; i < dy + 1; i++) {
+                img_data[floor(x0 + i / m) + floor(y0 - i) * width] = brightness;
+            }
+        }
+        else {
+            for (int i = 0; i < 1 - dy; i++) {
+                img_data[floor(x0 - i / m) + floor(y0 + i) * width] = brightness;
+            }
+        }
+    }
+    else if (m >= -1 && m <= 0) {
+        if (dx >= 0) {
+            for (int i = 0; i < dx + 1; i++) {
+                img_data[floor(x0 + i) + floor(y0 + i * (-m)) * width] = brightness;
+            }
+        }
+        else {
+            for (int i = 0; i < floor(1 - dx); i++) {
+                img_data[floor(x0 - i) + floor(y0 - i * (-m)) * width] = brightness;
+            }
+        }
+    }
+    else if (m < -1) {
+        if (dy >= 0) {
+            for (int i = 0; i < dy + 1; i++) {
+                img_data[floor(x0 + i / (-m)) + floor(y0 + i) * width] = brightness;
+            }
+        }
+        else {
+            for (int i = 0; i < 1 - dy; i++) {
+                img_data[floor(x0 - i / (-m)) + floor(y0 - i) * width] = brightness;
+            }
+        }
+    }
 }
 
 int main() {

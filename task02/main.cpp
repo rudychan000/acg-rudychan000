@@ -65,8 +65,31 @@ int number_of_intersection_ray_against_quadratic_bezier(
     const Eigen::Vector2f &pc,
     const Eigen::Vector2f &pe) {
   // comment out below to do the assignment
-  return number_of_intersection_ray_against_edge(org, dir, ps, pe);
+   //return number_of_intersection_ray_against_edge(org, dir, ps, pe);
   // write some code below to find the intersection between ray and the quadratic
+    
+    Eigen::Vector2f dir_perp = Eigen::Vector2f(-20., 60.);
+    float a = pe.dot(dir_perp) + ps.dot(dir_perp)-2*pc.dot(dir_perp);
+    float b = 2 * pc.dot(dir_perp)-2*ps.dot(dir_perp);
+    float c = ps.dot(dir_perp) - org.dot(dir_perp);
+    float dis = b * b - 4 * a * c; //  discriminant
+    if (dis < 0)return 0;
+    else if (dis == 0) {
+        float t = -b / (2 * a);
+        Eigen::Vector2f p = (1 - t) * (1 - t) * ps + 2 * (1 - t)*t * pc + t * t * pe;
+        if (t > 0 && t < 1&&(p-org).dot(dir)>0)return 1;
+    }
+    else {
+        float t1 = (-b + pow(dis, 0.5)) / (2 * a);
+        float t2 = (-b - pow(dis, 0.5)) / (2 * a);
+        Eigen::Vector2f p1 = (1 - t1) * (1 - t1) * ps + 2 * (1 - t1) * t1 * pc + t1 * t1 * pe;
+        Eigen::Vector2f p2 = (1 - t2) * (1 - t2) * ps + 2 * (1 - t2) * t2 * pc + t2 * t2 * pe;
+        int count = 0;
+        if (t1 > 0 && t1 < 1 && (p1 - org).dot(dir) > 0)count++;
+        if (t2 > 0 && t2 < 1 && (p2 - org).dot(dir) > 0)count++;
+        return count;
+    }
+ 
 }
 
 int main() {
@@ -82,6 +105,9 @@ int main() {
   std::vector<unsigned char> img_data(width * height, 255); // grayscale image initialized white
   for (unsigned int ih = 0; ih < height; ++ih) {
     for (unsigned int iw = 0; iw < width; ++iw) {
+      if (ih == 500 && width == 70) {
+            int x = 0;
+      }
       const auto org = Eigen::Vector2f(iw + 0.5, ih + 0.5); // pixel center
       const auto dir = Eigen::Vector2f(60., 20.); // search direction
       int count_cross = 0;

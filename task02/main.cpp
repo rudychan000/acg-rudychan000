@@ -104,30 +104,28 @@ int main() {
   //
   std::vector<unsigned char> img_data(width * height, 255); // grayscale image initialized white
   for (unsigned int ih = 0; ih < height; ++ih) {
-    for (unsigned int iw = 0; iw < width; ++iw) {
-      if (ih == 500 && width == 70) {
-            int x = 0;
-      }
-      const auto org = Eigen::Vector2f(iw + 0.5, ih + 0.5); // pixel center
-      const auto dir = Eigen::Vector2f(60., 20.); // search direction
-      int count_cross = 0;
-      for (const auto &loop: loops) { // loop over loop (letter R have internal/external loops)
-        for (const auto &edge: loop) { // loop over edge in the loop
-          if (edge.is_bezier) { // in case the edge is a quadratic Bézier
-            count_cross += number_of_intersection_ray_against_quadratic_bezier(
-                org, dir,
-                edge.ps, edge.pc, edge.pe);
-          } else { // in case the edge is a line segment
-            count_cross += number_of_intersection_ray_against_edge(
-                org, dir,
-                edge.ps, edge.pe);
+      for (unsigned int iw = 0; iw < width; ++iw) {
+          const auto org = Eigen::Vector2f(iw + 0.5, ih + 0.5); // pixel center
+          const auto dir = Eigen::Vector2f(60., 20.); // search direction
+          int count_cross = 0;
+          for (const auto& loop : loops) { // loop over loop (letter R have internal/external loops)
+              for (const auto& edge : loop) { // loop over edge in the loop
+                  if (edge.is_bezier) { // in case the edge is a quadratic Bézier
+                      count_cross += number_of_intersection_ray_against_quadratic_bezier(
+                          org, dir,
+                          edge.ps, edge.pc, edge.pe);
+                  }
+                  else { // in case the edge is a line segment
+                      count_cross += number_of_intersection_ray_against_edge(
+                          org, dir,
+                          edge.ps, edge.pe);
+                  }
+              }
           }
-        }
+          if (count_cross % 2 == 1) { // Jordan's curve theory
+              img_data[ih * width + iw] = 0; // paint black if it is inside
+          }
       }
-      if (count_cross % 2 == 1) { // Jordan's curve theory
-        img_data[ih * width + iw] = 0; // paint black if it is inside
-      }
-    }
   }
   const auto output_file_path = std::filesystem::path(PROJECT_SOURCE_DIR) / "output.png";
   stbi_write_png(output_file_path.string().c_str(), width, height, 1, img_data.data(), width);

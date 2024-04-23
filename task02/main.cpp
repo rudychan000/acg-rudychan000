@@ -65,17 +65,22 @@ int number_of_intersection_ray_against_quadratic_bezier(
     const Eigen::Vector2f &pc,
     const Eigen::Vector2f &pe) {
   // comment out below to do the assignment
-   //return number_of_intersection_ray_against_edge(org, dir, ps, pe);
+  //return number_of_intersection_ray_against_edge(org, dir, ps, pe);
   // write some code below to find the intersection between ray and the quadratic
     
-    Eigen::Vector2f dir_perp = Eigen::Vector2f(-20., 60.);
-    float a = pe.dot(dir_perp) + ps.dot(dir_perp)-2*pc.dot(dir_perp);
-    float b = 2 * pc.dot(dir_perp)-2*ps.dot(dir_perp);
-    float c = ps.dot(dir_perp) - org.dot(dir_perp);
+    // P= org + s*dir
+    // P·w = org·w ( w is perpendicular to s )
+    // p·w = (1-t)^2*ps·w + 2(1-)t*pc·w + t^2*p2·w
+
+    Eigen::Vector2f w = Eigen::Vector2f(-20., 60.);
+    float a = pe.dot(w) + ps.dot(w)-2*pc.dot(w);
+    float b = 2 * pc.dot(w)-2*ps.dot(w);
+    float c = ps.dot(w) - org.dot(w);
     float dis = b * b - 4 * a * c; //  discriminant
     if (dis < 0)return 0;
     else if (dis == 0) {
         float t = -b / (2 * a);
+        //(p-org).dot(dir)>0 is for checking if s>0 
         Eigen::Vector2f p = (1 - t) * (1 - t) * ps + 2 * (1 - t)*t * pc + t * t * pe;
         if (t > 0 && t < 1&&(p-org).dot(dir)>0)return 1;
     }
@@ -104,28 +109,27 @@ int main() {
   //
   std::vector<unsigned char> img_data(width * height, 255); // grayscale image initialized white
   for (unsigned int ih = 0; ih < height; ++ih) {
-      for (unsigned int iw = 0; iw < width; ++iw) {
-          const auto org = Eigen::Vector2f(iw + 0.5, ih + 0.5); // pixel center
-          const auto dir = Eigen::Vector2f(60., 20.); // search direction
-          int count_cross = 0;
-          for (const auto& loop : loops) { // loop over loop (letter R have internal/external loops)
-              for (const auto& edge : loop) { // loop over edge in the loop
-                  if (edge.is_bezier) { // in case the edge is a quadratic Bézier
-                      count_cross += number_of_intersection_ray_against_quadratic_bezier(
-                          org, dir,
-                          edge.ps, edge.pc, edge.pe);
-                  }
-                  else { // in case the edge is a line segment
-                      count_cross += number_of_intersection_ray_against_edge(
-                          org, dir,
-                          edge.ps, edge.pe);
-                  }
-              }
+    for (unsigned int iw = 0; iw < width; ++iw) {
+      const auto org = Eigen::Vector2f(iw + 0.5, ih + 0.5); // pixel center
+      const auto dir = Eigen::Vector2f(60., 20.); // search direction
+      int count_cross = 0;
+      for (const auto &loop: loops) { // loop over loop (letter R have internal/external loops)
+        for (const auto &edge: loop) { // loop over edge in the loop
+          if (edge.is_bezier) { // in case the edge is a quadratic Bézier
+            count_cross += number_of_intersection_ray_against_quadratic_bezier(
+                org, dir,
+                edge.ps, edge.pc, edge.pe);
+          } else { // in case the edge is a line segment
+            count_cross += number_of_intersection_ray_against_edge(
+                org, dir,
+                edge.ps, edge.pe);
           }
-          if (count_cross % 2 == 1) { // Jordan's curve theory
-              img_data[ih * width + iw] = 0; // paint black if it is inside
-          }
+        }
       }
+      if (count_cross % 2 == 1) { // Jordan's curve theory
+        img_data[ih * width + iw] = 0; // paint black if it is inside
+      }
+    }
   }
   const auto output_file_path = std::filesystem::path(PROJECT_SOURCE_DIR) / "output.png";
   stbi_write_png(output_file_path.string().c_str(), width, height, 1, img_data.data(), width);

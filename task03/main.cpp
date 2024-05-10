@@ -68,8 +68,8 @@ void draw_3d_triangle_with_texture(
       // Compute the barycentric coordinate ***on the 3d triangle** below that gives the correct texture mapping.
       // (Hint: formulate a linear system with 4x4 coefficient matrix and solve it to get the barycentric coordinate)
 
-      // the view space coordinates of NDC point s is (s[0]*w, s[1]*w, z, w)^T
-      // we need to get barycentric coodinates b1 b2 b3 and the w component of s
+      // we know the view space coordinates of NDC point s is (s[0]*w, s[1]*w, z, w)^T
+      // and what we need to do is to get barycentric coodinates b1 b2 b3 and the w component of s
       // because we can't compute the z component of s, so we use w component to create the 4 equation to compute 4 variable
       // the matrix is representing the following equations
       //  b1q0[0] + b2q1[0] + b3q3[0] = s[0]*w
@@ -84,7 +84,8 @@ void draw_3d_triangle_with_texture(
       };
       Eigen::Vector4f rhs{0,0,0,1};
       // take the inverse of coeff to compute the result
-      auto bc_res = coeff.inverse() * rhs; 
+      auto coeff_inverse = coeff.inverse();
+      auto bc_res = coeff_inverse * rhs; 
       bc[0] = bc_res[0];
       bc[1] = bc_res[1];
       bc[2] = bc_res[2];

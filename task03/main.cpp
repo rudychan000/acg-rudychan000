@@ -67,8 +67,27 @@ void draw_3d_triangle_with_texture(
       // `bc` gives the barycentric coordinate **on the screen** and it is distorted.
       // Compute the barycentric coordinate ***on the 3d triangle** below that gives the correct texture mapping.
       // (Hint: formulate a linear system with 4x4 coefficient matrix and solve it to get the barycentric coordinate)
-      Eigen::Matrix4f coeff;
-      Eigen::Vector4f rhs;
+
+      // the view space coordinates of NDC point s is (s[0]*w, s[1]*w, z, w)^T
+      // we need to get barycentric coodinates b1 b2 b3 and the w component of s
+      // because we can't compute the z component of s, so we use w component to create the 4 equation to compute 4 variable
+      // the matrix is representing the following equations
+      //  b1q0[0] + b2q1[0] + b3q3[0] = s[0]*w
+      //  b1q0[1] + b2q1[1] + b3q3[1] = s[1]*w
+      //  b1q0[3] + b2q1[3] + b3q3[3] = w
+      //  b1 + b2 + b3 = 1
+      Eigen::Matrix4f coeff{
+       {q0[0],q1[0],q2[0],-s[0]}, 
+       {q0[1],q1[1],q2[1],-s[1]}, 
+       {q0[3],q1[3],q2[3],-1}, 
+       {1,1,1,0},
+      };
+      Eigen::Vector4f rhs{0,0,0,1};
+      // take the inverse of coeff to compute the result
+      auto bc_res = coeff.inverse() * rhs; 
+      bc[0] = bc_res[0];
+      bc[1] = bc_res[1];
+      bc[2] = bc_res[2];
 
       // do not change below
       auto uv = uv0 * bc[0] + uv1 * bc[1] + uv2 * bc[2]; // uv coordinate of the pixel

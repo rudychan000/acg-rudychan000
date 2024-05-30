@@ -51,8 +51,15 @@ auto sample_hemisphere(
 
   // For Problem 4, write some code below to sample hemisphere with cosign weight
   // (i.e., the sampling frequency is higher at the top)
-
-
+  
+  const float cos_theta = std::sqrt(unirand.x());
+  const float sin_theta = std::sqrt(1.f - cos_theta * cos_theta);
+  dir_loc = Eigen::Vector3f(
+      sin_theta * std::cos(phi),
+      sin_theta * std::sin(phi),
+      cos_theta);
+  pdf = cos_theta / float(M_PI);
+  
   // end of Problem 4. Do not modify the two lines below
   const auto dir_out = local_to_world_vector_transformation(nrm) * dir_loc; // rotate the sample (zup -> nrm)
   return {dir_out, pdf};
@@ -230,7 +237,7 @@ int main() {
         img_data_nrm[(ih * img_width + iw) * 3 + 1] = nrm.y() * 0.5f + 0.5f;
         img_data_nrm[(ih * img_width + iw) * 3 + 2] = nrm.z() * 0.5f + 0.5f;
       }
-      continue; // comment out here for Problem 3,4
+      //continue; // comment out here for Problem 3,4
       //
       if (res) { // ambient occlusion computation
         const unsigned int num_sample_ao = 100;
@@ -242,7 +249,8 @@ int main() {
           const auto res1 = find_intersection_between_ray_and_triangle_mesh(
               pos0, dir, tri2vtx, vtx2xyz, bvhnodes);
           if (!res1) { // if the ray doe not hit anything
-            sum += 1.f; // Problem 3: This is a bug. write some correct code (hint: use `dir.dot(nrm)`, `pdf`, `M_PI`).
+              sum += dir.dot(nrm) / (pdf * float(M_PI));
+            // sum += 1.f; // Problem 3: This is a bug. write some correct code (hint: use `dir.dot(nrm)`, `pdf`, `M_PI`).
           }
         }
         img_data_ao[ih * img_width + iw] = sum / float(num_sample_ao); // do not change

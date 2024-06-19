@@ -92,6 +92,8 @@ class HelloWorld(mglw.WindowConfig):
             if i_bone_parent == -1:  # root bone
                 bone2globalTransformation[i_bone] = bone2relativeTransformation[i_bone]
                 continue
+            else:
+                bone2globalTransformation[i_bone] = np.matmul(bone2globalTransformation[i_bone_parent], bone2relativeTransformation[i_bone])
             # below, write one or two lines of code to compute `bone2globalTransformation[i_bone]`
             # hint: use numpy.matmul for multiplying nd-array
             # bone2globalTransformation[i_bone] = ???
@@ -108,7 +110,7 @@ class HelloWorld(mglw.WindowConfig):
                 # write a few lines of codes to compute p1 using the linear blend skinning
                 # hint: use np.matmul for matrix multiplication
                 # hint: assume that rig weights w add up to one
-
+                p1 += w * np.matmul(globalTransformation, np.matmul(inverseBindingMatrix, p0))
                 # p1 += ???
 
             self.vtx2xyz_def[i_vtx] = p1[:3]  # from homogeneous coordinates to the Cartesian coordinates
